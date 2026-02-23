@@ -2,7 +2,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
 
-import { intro, isCancel, log, note, outro, password, spinner } from '@clack/prompts'
+import { cancel, intro, isCancel, log, note, outro, password, spinner } from '@clack/prompts'
 import { bgCyan, black, cyan, underline } from 'colorette'
 import { Command } from 'commander'
 
@@ -187,7 +187,7 @@ program
 		})
 
 		if (isCancel(sessionId)) {
-			log.warn('Login cancelled.')
+			cancel('Login cancelled.')
 			blank()
 
 			return
