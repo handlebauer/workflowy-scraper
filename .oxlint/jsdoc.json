@@ -1,0 +1,23 @@
+{
+	"rules": {
+		"jsdoc-js/require-jsdoc": [
+			"error",
+			{
+				"require": {
+					"FunctionDeclaration": true,
+					"ClassDeclaration": true,
+					"ArrowFunctionExpression": false,
+					"FunctionExpression": false,
+					"MethodDefinition": false
+				},
+				"contexts": [
+					"Program > VariableDeclaration[kind=const] > VariableDeclarator > ArrowFunctionExpression",
+					"Program > ExportNamedDeclaration > VariableDeclaration[kind=const] > VariableDeclarator > ArrowFunctionExpression"
+				],
+				"enableFixer": false,
+				"exemptOverloadedImplementations": true,
+				"skipInterveningOverloadedDeclarations": true
+			}
+		]
+	}
+}

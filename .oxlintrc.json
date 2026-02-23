@@ -1,0 +1,16 @@
+{
+	"$schema": "./node_modules/oxlint/configuration_schema.json",
+	"extends": [".oxlint/base.json"],
+	"globals": {
+		"Bun": "readonly",
+		"Buffer": "readonly",
+		"Response": "readonly",
+		"URL": "readonly",
+		"console": "readonly",
+		"fetch": "readonly",
+		"performance": "readonly",
+		"process": "readonly",
+		"setTimeout": "readonly",
+		"clearTimeout": "readonly"
+	}
+}

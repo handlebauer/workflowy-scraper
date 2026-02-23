@@ -1,0 +1,41 @@
+{
+	"name": "workflowy-scraper",
+	"type": "module",
+	"private": true,
+	"module": "dist/index.mjs",
+	"types": "dist/index.d.mts",
+	"bin": {
+		"wf": "dist/cli.mjs"
+	},
+	"exports": {
+		".": {
+			"import": "./dist/index.mjs",
+			"types": "./dist/index.d.mts"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"devDependencies": {
+		"@stylistic/eslint-plugin": "^5.9.0",
+		"@types/bun": "latest",
+		"eslint-plugin-jsdoc": "^62.7.0",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.2.7",
+		"oxfmt": "^0.34.0",
+		"oxlint": "^1.49.0",
+		"tsdown": "^0.20.3"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	},
+	"scripts": {
+		"prepare": "husky",
+		"check": "bun run harness/check.ts",
+		"build": "tsdown",
+		"wf": "bun run src/cli.ts"
+	},
+	"dependencies": {
+		"commander": "^14.0.3"
+	}
+}
