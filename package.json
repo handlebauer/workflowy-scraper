@@ -37,6 +37,8 @@
 		"wf": "bun run src/cli.ts"
 	},
 	"dependencies": {
+		"@clack/prompts": "^1.0.1",
+		"colorette": "^2.0.20",
 		"commander": "^14.0.3"
 	}
 }

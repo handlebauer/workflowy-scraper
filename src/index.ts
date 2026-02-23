@@ -1,3 +1,10 @@
+export {
+	getConfigDir,
+	getConfigPath,
+	readConfig,
+	resolveSessionId,
+	writeConfig,
+} from './config/index.ts'
 export { collectAuxRoots, writeOutput } from './export/index.ts'
 export { buildSectionMarkdown, nodeToMarkdown } from './export/index.ts'
 export {

@@ -5,6 +5,7 @@ import { countNodes } from '../workflowy/tree.ts'
 import { nodeToMarkdown } from './markdown.ts'
 
 import type { InitData, WfNode } from '../workflowy/types.ts'
+import type { WriteResult } from './types.ts'
 
 const JSON_INDENT = 2
 const ROOT_DEPTH = 0
@@ -29,18 +30,18 @@ export async function writeOutput(
 	data: InitData,
 	roots: WfNode[],
 	outputDir: string,
-): Promise<void> {
+): Promise<WriteResult> {
 	await mkdir(outputDir, { recursive: true })
 
-	const total = countNodes(roots)
+	const nodeCount = countNodes(roots)
 
 	const jsonPath = join(outputDir, 'workflowy.json')
 
 	await writeFile(jsonPath, JSON.stringify(data, null, JSON_INDENT))
-	console.log(`  workflowy.json (${total} nodes)`)
 
 	const mdPath = join(outputDir, 'workflowy.md')
 
 	await writeFile(mdPath, buildMarkdown(roots))
-	console.log(`  workflowy.md`)
+
+	return { jsonPath, mdPath, nodeCount }
 }

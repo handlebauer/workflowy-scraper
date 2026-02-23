@@ -12,13 +12,13 @@ const config: TaskRunnerConfig = {
 		},
 		{
 			command: 'bunx oxlint',
-			id: 'oxlint',
+			id: 'oxlint --fix',
 			name: 'Lint',
 		},
 		{
-			command: 'bunx oxfmt --check .',
+			command: 'bunx oxfmt .',
 			id: 'oxfmt',
-			name: 'Format check',
+			name: 'Format',
 		},
 	],
 }
