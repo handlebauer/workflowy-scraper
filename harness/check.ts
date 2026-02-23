@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+
 import { runTasks } from './utils/runner/index.ts'
 
 import type { TaskRunnerConfig } from './utils/runner/index.ts'
@@ -6,19 +7,19 @@ import type { TaskRunnerConfig } from './utils/runner/index.ts'
 const config: TaskRunnerConfig = {
 	tasks: [
 		{
-			command: 'bunx -p @typescript/native-preview tsgo --build --noEmit',
-			id: 'typecheck',
 			name: 'Type check',
+			id: 'typecheck',
+			command: 'bunx -p @typescript/native-preview tsgo --build --noEmit',
 		},
 		{
-			command: 'bunx oxlint',
-			id: 'oxlint --fix',
 			name: 'Lint',
+			id: 'oxlint',
+			command: 'bunx oxlint --fix',
 		},
 		{
-			command: 'bunx oxfmt .',
-			id: 'oxfmt',
 			name: 'Format',
+			id: 'oxfmt',
+			command: 'bunx oxfmt .',
 		},
 	],
 }

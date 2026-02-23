@@ -24,6 +24,7 @@
 		"max-params": ["error", 5],
 		"no-duplicate-imports": "off",
 		"no-template-curly-in-string": "off",
-		"custom/type-locations": "error"
+		"custom/type-locations": "error",
+		"sort-keys": "off"
 	}
 }
