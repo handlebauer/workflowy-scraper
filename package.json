@@ -1,6 +1,6 @@
 {
 	"name": "workflowy-scraper",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"type": "module",
 	"module": "dist/index.mjs",
 	"types": "dist/index.d.mts",
@@ -34,6 +34,7 @@
 		"check": "bun run harness/check.ts",
 		"build": "tsdown",
 		"release": "bun run publish.ts",
+		"bump": "bunx bumpp",
 		"wf": "bun run src/cli.ts"
 	},
 	"dependencies": {
