@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { readFile } from 'node:fs/promises'
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { dirname } from 'node:path'
 
 import { Command } from 'commander'
 
@@ -8,27 +9,27 @@ import { WorkFlowyClient, countNodes, queryNodes } from './workflowy/index.ts'
 
 import type { InitData, MatchMode } from './workflowy/index.ts'
 
-const EXIT_FAILURE = 1
 const JSON_INDENT = 2
-const VALID_MODES: MatchMode[] = ['contains', 'exact', 'regex', 'starts-with']
 
-/** Loads init data from a local file or the WorkFlowy API. */
-async function loadInitData(options: { input?: string; sessionId?: string }): Promise<InitData> {
-	if (options.input) {
-		console.log(`Reading from ${options.input}...`)
+/** Loads init data from a local file or the WorkFlowy API (via WORKFLOWY_SESSION_ID env var). */
+async function loadInitData(from?: string): Promise<InitData> {
+	if (from) {
+		console.log(`Reading from ${from}...`)
 
-		const raw = await readFile(options.input, 'utf8')
+		const raw = await readFile(from, 'utf8')
 
 		return JSON.parse(raw) as InitData
 	}
 
-	const sessionId = options.sessionId ?? process.env['WORKFLOWY_SESSION_ID']
+	const sessionId = process.env['WORKFLOWY_SESSION_ID']
 
 	if (!sessionId) {
 		throw new Error(
-			'No data source provided. Use --input <file> or --session-id <id> (or WORKFLOWY_SESSION_ID env var).',
+			'No data source. Use --file <path> or set the WORKFLOWY_SESSION_ID env var.',
 		)
 	}
+
+	console.log('Fetching from WorkFlowy API...')
 
 	const client = new WorkFlowyClient(sessionId)
 
@@ -38,64 +39,63 @@ async function loadInitData(options: { input?: string; sessionId?: string }): Pr
 const program = new Command()
 	.name('wf')
 	.description('WorkFlowy scraper: fetch, filter, and export WorkFlowy trees')
-	.version('0.1.0')
+	.version(__VERSION__)
 
 program
-	.command('export')
-	.description('Export WorkFlowy data as JSON and Markdown')
-	.option('-i, --input <path>', 'read from a local JSON file instead of fetching')
-	.option('-s, --session-id <id>', 'WorkFlowy session cookie (or WORKFLOWY_SESSION_ID env var)')
-	.option('-o, --output <dir>', 'output directory', './out')
-	.option('-m, --match <pattern>', 'filter nodes whose name matches this pattern')
-	.option('--match-mode <mode>', 'match mode: exact, starts-with, contains, regex', 'contains')
+	.argument('[pattern]', 'filter nodes whose name matches this pattern')
+	.requiredOption('-o, --out <dir>', 'output directory')
+	.option('-f, --file <path>', 'read from a local JSON file instead of fetching')
+	.option('--exact', 'match node name exactly')
+	.option('--starts-with', 'match nodes whose name starts with the pattern')
+	.option('--regex', 'treat the pattern as a regular expression')
 	.action(
-		async (opts: {
-			input?: string
-			matchMode: string
-			match?: string
-			output: string
-			sessionId?: string
-		}) => {
-			const matchMode = opts.matchMode as MatchMode
+		async (
+			pattern: string | undefined,
+			opts: {
+				exact?: boolean
+				file?: string
+				out: string
+				regex?: boolean
+				startsWith?: boolean
+			},
+		) => {
+			let mode: MatchMode = 'contains'
 
-			if (!VALID_MODES.includes(matchMode)) {
-				console.error(
-					`Invalid --match-mode "${matchMode}". Must be one of: ${VALID_MODES.join(', ')}`,
-				)
-				process.exit(EXIT_FAILURE)
+			if (opts.exact) {
+				mode = 'exact'
+			} else if (opts.startsWith) {
+				mode = 'starts-with'
+			} else if (opts.regex) {
+				mode = 'regex'
 			}
 
-			const data = await loadInitData({ input: opts.input, sessionId: opts.sessionId })
+			const data = await loadInitData(opts.file)
 
 			let roots = collectAuxRoots(data)
 
-			if (opts.match) {
-				console.log(`Filtering: mode=${matchMode} pattern="${opts.match}"`)
-				roots = queryNodes(roots, { mode: matchMode, pattern: opts.match })
+			if (pattern) {
+				console.log(`Filtering: mode=${mode} pattern="${pattern}"`)
+				roots = queryNodes(roots, { mode, pattern })
 				console.log(`  Matched ${roots.length} node(s)`)
 			}
 
-			await writeOutput(data, roots, opts.output)
-			console.log(`\nDone! Output written to ${opts.output}`)
+			await writeOutput(data, roots, opts.out)
+			console.log(`\nDone! Output written to ${opts.out}`)
 		},
 	)
 
 program
 	.command('fetch')
 	.description('Fetch WorkFlowy data and save the raw JSON')
-	.option('-s, --session-id <id>', 'WorkFlowy session cookie (or WORKFLOWY_SESSION_ID env var)')
-	.option('-o, --output <path>', 'output file path', './out/workflowy.json')
-	.action(async (opts: { output: string; sessionId?: string }) => {
-		const data = await loadInitData({ sessionId: opts.sessionId })
+	.requiredOption('-o, --out <path>', 'output file path')
+	.action(async (opts: { out: string }) => {
+		const data = await loadInitData()
 		const roots = collectAuxRoots(data)
 		const total = countNodes(roots)
 
-		const { mkdir, writeFile } = await import('node:fs/promises')
-		const { dirname } = await import('node:path')
-
-		await mkdir(dirname(opts.output), { recursive: true })
-		await writeFile(opts.output, JSON.stringify(data, null, JSON_INDENT))
-		console.log(`\nSaved ${total} nodes to ${opts.output}`)
+		await mkdir(dirname(opts.out), { recursive: true })
+		await writeFile(opts.out, JSON.stringify(data, null, JSON_INDENT))
+		console.log(`\nSaved ${total} nodes to ${opts.out}`)
 	})
 
 program.parse()

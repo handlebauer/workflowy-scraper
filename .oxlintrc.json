@@ -2,6 +2,7 @@
 	"$schema": "./node_modules/oxlint/configuration_schema.json",
 	"extends": [".oxlint/base.json"],
 	"globals": {
+		"__VERSION__": "readonly",
 		"Bun": "readonly",
 		"Buffer": "readonly",
 		"Response": "readonly",
