@@ -2,7 +2,6 @@
 	"name": "workflowy-scraper",
 	"version": "0.1.0",
 	"type": "module",
-	"private": true,
 	"module": "dist/index.mjs",
 	"types": "dist/index.d.mts",
 	"bin": {
@@ -34,6 +33,7 @@
 		"prepare": "husky",
 		"check": "bun run harness/check.ts",
 		"build": "tsdown",
+		"publish": "bun run scripts/publish.ts",
 		"wf": "bun run src/cli.ts"
 	},
 	"dependencies": {
