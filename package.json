@@ -33,7 +33,7 @@
 		"prepare": "husky",
 		"check": "bun run harness/check.ts",
 		"build": "tsdown",
-		"release": "bun run scripts/publish.ts",
+		"release": "bun run publish.ts",
 		"wf": "bun run src/cli.ts"
 	},
 	"dependencies": {
