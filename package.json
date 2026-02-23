@@ -1,6 +1,6 @@
 {
 	"name": "workflowy-scraper",
-	"version": "0.1.3",
+	"version": "0.1.4",
 	"type": "module",
 	"module": "dist/index.mjs",
 	"types": "dist/index.d.mts",
