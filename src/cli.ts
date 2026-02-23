@@ -7,7 +7,13 @@ import { bgCyan, black, cyan, underline } from 'colorette'
 import { Command } from 'commander'
 
 import { getConfigPath, resolveSessionId, writeConfig } from './config/index.ts'
-import { collectAuxRoots, writeOutput } from './export/index.ts'
+import {
+	buildJson,
+	buildMarkdown,
+	collectAllRoots,
+	totalNodeCount,
+	writeToFile,
+} from './export/index.ts'
 import { blank } from './log.ts'
 import { WorkFlowyClient, countNodes, queryNodes } from './workflowy/index.ts'
 
@@ -17,6 +23,9 @@ const EXIT_FAILURE = 1
 const JSON_INDENT = 2
 const SINGLE = 1
 const VERSION = typeof __VERSION__ === 'string' ? __VERSION__ : 'dev'
+
+/** Whether stdout is connected to a terminal (not piped). */
+const isTTY = Boolean(process.stdout.isTTY)
 
 /** Extracts a human-readable message from an unknown error. */
 function errorMessage(error: unknown): string {
@@ -72,8 +81,9 @@ const program = new Command()
 
 program
 	.argument('[pattern]', 'filter nodes whose name matches this pattern')
-	.option('-o, --out <dir>', 'output directory')
+	.option('-o, --out <path>', 'write output to a file instead of stdout')
 	.option('-f, --file <path>', 'read from a local JSON file instead of fetching')
+	.option('--json', 'output JSON instead of markdown')
 	.option('--exact', 'match node name exactly')
 	.option('--starts-with', 'match nodes whose name starts with the pattern')
 	.option('--regex', 'treat the pattern as a regular expression')
@@ -83,17 +93,12 @@ program
 			opts: {
 				exact?: boolean
 				file?: string
+				json?: boolean
 				out?: string
 				regex?: boolean
 				startsWith?: boolean
 			},
 		) => {
-			if (!opts.out) {
-				program.error("required option '-o, --out <dir>' not specified")
-
-				return
-			}
-
 			let mode: MatchMode = 'contains'
 
 			if (opts.exact) {
@@ -104,18 +109,23 @@ program
 				mode = 'regex'
 			}
 
-			blank()
-			intro(bgCyan(black(' wf export ')))
+			if (isTTY) {
+				blank()
+				intro(bgCyan(black(' wf export ')))
+			}
 
 			const s = spinner()
 
 			try {
 				const data = await loadInitData(s, opts.file)
 
-				let roots = collectAuxRoots(data)
+				let roots = collectAllRoots(data)
 
 				if (pattern) {
-					log.info(`Filter: mode=${mode} pattern="${pattern}"`)
+					if (isTTY) {
+						log.info(`Filter: mode=${mode} pattern="${pattern}"`)
+					}
+
 					s.start('Filtering')
 					roots = queryNodes(roots, { mode, pattern })
 
@@ -125,11 +135,22 @@ program
 					s.stop(`Matched ${roots.length} ${matchLabel} (${subCount} sub-nodes)`)
 				}
 
-				s.start(`Writing to ${path(opts.out)}`)
-				await writeOutput(data, roots, opts.out)
-				s.stop(`Wrote to ${path(opts.out)}`)
+				const content = opts.json ? buildJson(roots) : buildMarkdown(roots)
 
-				outro('Done')
+				if (opts.out) {
+					s.start(`Writing to ${path(opts.out)}`)
+					await writeToFile(content, opts.out)
+
+					const nodeCount = totalNodeCount(roots).toLocaleString()
+
+					s.stop(`Wrote ${nodeCount} nodes to ${path(opts.out)}`)
+				} else {
+					process.stdout.write(content)
+				}
+
+				if (isTTY) {
+					outro('Done')
+				}
 			} catch (error: unknown) {
 				s.stop('Failed')
 				log.error(errorMessage(error))
@@ -151,7 +172,7 @@ program
 
 		try {
 			const data = await loadInitData(s)
-			const roots = collectAuxRoots(data)
+			const roots = collectAllRoots(data)
 			const total = countNodes(roots)
 
 			s.start(`Writing to ${path(opts.out)}`)

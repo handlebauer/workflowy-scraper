@@ -1,8 +1,8 @@
 # workflowy-scraper
 
-CLI tool to export your personal [WorkFlowy](https://workflowy.com) data as JSON and Markdown.
+CLI tool to export your personal [WorkFlowy](https://workflowy.com) data as Markdown or JSON.
 
-WorkFlowy doesn't offer a public API or bulk export. This tool uses their internal API to pull your entire outline (including shared/team trees), optionally filter it by node name, and write the results to disk. Useful for local backups, search, CI pipelines, or feeding your notes into other tools.
+WorkFlowy doesn't offer a public API or bulk export. This tool uses their internal API to pull your entire outline (including shared/team trees), optionally filter it by node name, and write the results to stdout or a file. Useful for local backups, search, CI pipelines, or feeding your notes into other tools.
 
 ## Setup
 
@@ -37,54 +37,59 @@ The session cookie is valid for ~6 months. In CI, store it as a secret and rotat
 
 ### Export (default command)
 
-Loads WorkFlowy data, optionally filters by node name, and writes `workflowy.json` + `workflowy.md` to the output directory.
+Loads WorkFlowy data, optionally filters by node name, and writes markdown to stdout. Use `-o` to write to a file, `--json` for JSON output.
 
 ```bash
-# Export everything from the API
-wf -o ./out
+# Markdown to stdout
+wf
 
-# Export everything from a local JSON file
-wf -f workflowy.json -o ./out
+# Pipe / redirect
+wf "Academics Root" --exact > academics.md
+wf "Academics Root" --exact | head -100
 
-# Filter by substring (default match mode)
-wf "Academics" -f workflowy.json -o ./out
+# Write to a file
+wf -o workflowy.md
+wf "Academics Root" --exact -o academics.md
 
-# Exact match
-wf "Academics Root" -f workflowy.json -o ./out --exact
+# JSON output
+wf --json
+wf "Academics Root" --exact --json -o academics.json
 
-# Starts-with match
-wf "Acad" -f workflowy.json -o ./out --starts-with
+# Read from a local JSON file instead of fetching
+wf -f workflowy.json
+wf "Academics Root" -f workflowy.json --exact -o academics.md
 
-# Regex match
-wf "^Academics.*Root$" -f workflowy.json -o ./out --regex
-
-# Fetch from API + filter in one shot
-wf "Academics Root" -o ./out --exact
+# Match modes
+wf "Academics"                          # contains (default)
+wf "Academics Root" --exact             # exact match
+wf "Acad" --starts-with                 # starts-with
+wf "^Academics.*Root$" --regex          # regex
 ```
 
 ### Fetch
 
-Downloads the raw WorkFlowy JSON without any processing — useful for caching locally.
+Downloads the raw WorkFlowy initialization data as JSON — useful for caching locally.
 
 ```bash
-wf fetch -o ./cache/workflowy.json
+wf fetch -o workflowy.json
 ```
 
 ### Options reference
 
 ```
-wf [pattern] -o <dir> [-f <file>] [--exact | --starts-with | --regex]
+wf [pattern] [-o <path>] [-f <file>] [--json] [--exact | --starts-with | --regex]
 wf fetch -o <path>
 wf login
 ```
 
-| Flag                | Description                                                   |
-| ------------------- | ------------------------------------------------------------- |
-| `-o, --out <path>`  | Output directory (export) or file path (fetch). **Required.** |
-| `-f, --file <path>` | Read from a local JSON file instead of fetching from the API  |
-| `--exact`           | Match node name exactly                                       |
-| `--starts-with`     | Match nodes whose name starts with the pattern                |
-| `--regex`           | Treat the pattern as a regular expression                     |
+| Flag                | Description                                                  |
+| ------------------- | ------------------------------------------------------------ |
+| `-o, --out <path>`  | Write output to a file instead of stdout                     |
+| `-f, --file <path>` | Read from a local JSON file instead of fetching from the API |
+| `--json`            | Output JSON instead of markdown                              |
+| `--exact`           | Match node name exactly                                      |
+| `--starts-with`     | Match nodes whose name starts with the pattern               |
+| `--regex`           | Treat the pattern as a regular expression                    |
 
 When no match flag is given, the default mode is **contains**.
 
@@ -105,12 +110,12 @@ Hobbies
 └── Reading
 ```
 
-| Command                        | Matches                | Output includes                |
-| ------------------------------ | ---------------------- | ------------------------------ |
-| `wf "Alpha" -o out`            | `Alpha`, `Alpha (old)` | Both nodes with their subtrees |
-| `wf "Projects" -o out --exact` | `Projects`             | `Projects` → `Alpha`, `Beta`   |
-| `wf "Al" -o out --starts-with` | `Alpha`, `Alpha (old)` | Both nodes                     |
-| `wf "^Work$" -o out --regex`   | `Work`                 | Entire `Work` subtree          |
+| Command                 | Matches                | Output includes                |
+| ----------------------- | ---------------------- | ------------------------------ |
+| `wf "Alpha"`            | `Alpha`, `Alpha (old)` | Both nodes with their subtrees |
+| `wf "Projects" --exact` | `Projects`             | `Projects` → `Alpha`, `Beta`   |
+| `wf "Al" --starts-with` | `Alpha`, `Alpha (old)` | Both nodes                     |
+| `wf "^Work$" --regex`   | `Work`                 | Entire `Work` subtree          |
 
 Key behaviours:
 
@@ -128,7 +133,10 @@ bun run build    # bundle to dist/ via tsdown
 
 ```bash
 # Run from source
-bun run wf -- -f workflowy.json -o ./out "Academics Root" --exact
+bun run wf -- "Academics Root" --exact -o academics.md
+
+# Markdown to stdout
+bun run wf -- "Academics Root" --exact
 
 # Lint + format
 bun run check
@@ -139,5 +147,5 @@ bun run check
 The package also exports its internals for programmatic use:
 
 ```ts
-import { WorkFlowyClient, queryNodes, collectAuxRoots } from 'workflowy-scraper'
+import { WorkFlowyClient, queryNodes, collectAuxRoots, buildMarkdown } from 'workflowy-scraper'
 ```

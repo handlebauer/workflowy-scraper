@@ -5,7 +5,14 @@ export {
 	resolveSessionId,
 	writeConfig,
 } from './config/index.ts'
-export { collectAuxRoots, writeOutput } from './export/index.ts'
+export {
+	buildJson,
+	buildMarkdown,
+	collectAllRoots,
+	collectAuxRoots,
+	totalNodeCount,
+	writeToFile,
+} from './export/index.ts'
 export { buildSectionMarkdown, nodeToMarkdown } from './export/index.ts'
 export {
 	WorkFlowyClient,
